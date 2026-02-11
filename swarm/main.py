@@ -36,7 +36,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from swarm.agents import Runner, set_tracing_disabled
+from agents import Runner, set_tracing_disabled
 
 from swarm.agents import AgentSuite
 from swarm.logger import SwarmLogger
