@@ -58,7 +58,15 @@ class SwarmLogger:
                           fold_scores: list[float] | None, fold_std: float | None,
                           passed: bool):
         icon = "✅" if passed else "❌"
-        fs = f" folds={[f'{s:.4f}' for s in fold_scores]}" if fold_scores else ""
+        fs = ""
+        if fold_scores:
+            rendered_scores: list[str] = []
+            for score in fold_scores:
+                if score is None:
+                    rendered_scores.append("N/A")
+                else:
+                    rendered_scores.append(f"{score:.4f}")
+            fs = f" folds={rendered_scores}"
         std_str = f" std={fold_std:.4f}" if fold_std is not None else ""
         score = f"{mean_score:.4f}" if mean_score is not None else "N/A"
         self._console.info(f"{icon} RESULT {exp_id}: mean={score}{fs}{std_str}")
