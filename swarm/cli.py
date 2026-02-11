@@ -23,10 +23,10 @@ def main():
 
     # --- run ---
     run_p = sub.add_parser("run", help="Start the swarm loop")
-    run_p.add_argument("--url", default="http://localhost:8000/v1",
-                       help="vLLM endpoint URL")
-    run_p.add_argument("--model", default="GPT-OSS-120B",
-                       help="Model name on vLLM")
+    run_p.add_argument("--url", default=None,
+                       help="Optional OpenAI-compatible base URL override")
+    run_p.add_argument("--model", default="gpt-5.2",
+                       help="Model name (defaults to OpenAI)")
     run_p.add_argument("--target", type=float, default=0.3,
                        help="Target weighted Pearson score")
     run_p.add_argument("--max-iterations", type=int, default=100)

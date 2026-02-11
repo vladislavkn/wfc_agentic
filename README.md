@@ -43,17 +43,21 @@ python data/prepare_data.py
 # 4. Initialize git
 git init && git add . && git commit -m "Initial setup"
 
-# 5. Start vLLM with GPT-OSS-120B (separate terminal)
+# 5. Create .env with your OpenAI key
+echo 'AI_API_TOKEN=your_openai_api_key' > .env
 
-# 6. Run the swarm
-python -m swarm.cli run --url http://localhost:8000/v1 --model GPT-OSS-120B
+# 6. Run the swarm (uses OpenAI by default)
+python -m swarm.cli run --model gpt-5.2
 ```
 
 ## Commands
 
 ```bash
-# Run the swarm
-python -m swarm.cli run [--url URL] [--model MODEL] [--target 0.3]
+# Run the swarm (OpenAI by default)
+python -m swarm.cli run [--model MODEL] [--target 0.3]
+
+# Optional: point to any OpenAI-compatible endpoint
+python -m swarm.cli run --url http://localhost:8000/v1 --model GPT-OSS-120B
 
 # Check status
 python -m swarm.cli status

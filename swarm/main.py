@@ -104,13 +104,13 @@ def parse_agent_json(text: str) -> dict:
 # ---------------------------------------------------------------------------
 
 async def run_swarm(
-    vllm_url: str = "http://localhost:8000/v1",
-    model_name: str = "GPT-OSS-120B",
+    vllm_url: str | None = None,
+    model_name: str = "gpt-5.2",
     target_score: float = 0.3,
     max_iterations: int = 100,
     db_path: str = "experiments/swarm.db",
 ):
-    set_tracing_disabled(True)  # vLLM doesn't support OpenAI tracing
+    set_tracing_disabled(True)
 
     lock_fd = acquire_lock()
     run_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

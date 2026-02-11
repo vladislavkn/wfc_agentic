@@ -1,7 +1,9 @@
 """
 Agent definitions.
 
-All agents use GPT-OSS-120B via vLLM.  Sub-agents (DedupChecker, DocLookup)
+Agents use an OpenAI-compatible chat completions backend. By default this
+reads AI_API_TOKEN from .env and uses OpenAI directly; --url can override
+the base URL for compatible providers. Sub-agents (DedupChecker, DocLookup)
 are short-lived and invoked via Runner.run() or .as_tool() to preserve
 parent context.
 
@@ -13,7 +15,9 @@ Fixes:
 
 from __future__ import annotations
 
-from agents import Agent, AsyncOpenAI, OpenAIChatCompletionsModel
+import os
+
+from agents import Agent, AsyncOpenAI, ModelSettings, OpenAIChatCompletionsModel
 from agents.mcp import MCPServerStdio
 
 from swarm.state import SwarmContext
@@ -33,9 +37,38 @@ from swarm.tools import (
 # Model & MCP setup
 # ---------------------------------------------------------------------------
 
-def build_model(base_url: str = "http://localhost:8000/v1",
-                model_name: str = "GPT-OSS-120B") -> OpenAIChatCompletionsModel:
-    client = AsyncOpenAI(base_url=base_url, api_key="not-needed")
+
+def _load_dotenv(path: str = ".env") -> None:
+    """Load key=value pairs from a local .env file into os.environ."""
+    if not os.path.exists(path):
+        return
+
+    with open(path, "r", encoding="utf-8") as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            os.environ.setdefault(key, value)
+
+
+def build_model(base_url: str | None = None,
+                model_name: str = "gpt-5.2") -> OpenAIChatCompletionsModel:
+    _load_dotenv()
+    api_key = os.getenv("AI_API_TOKEN") or os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "Missing API key. Set AI_API_TOKEN (or OPENAI_API_KEY) in .env or environment."
+        )
+
+    client_kwargs = {"api_key": api_key}
+    if base_url:
+        client_kwargs["base_url"] = base_url
+
+    client = AsyncOpenAI(**client_kwargs)
     return OpenAIChatCompletionsModel(model=model_name, openai_client=client)
 
 
@@ -48,6 +81,10 @@ def build_context7() -> MCPServerStdio:
         },
         cache_tools_list=True,
     )
+
+
+def _default_model_settings() -> ModelSettings:
+    return ModelSettings(reasoning={"effort": "low"})
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +109,7 @@ def build_dedup_checker(model: OpenAIChatCompletionsModel) -> Agent[SwarmContext
     return Agent[SwarmContext](
         name="DedupChecker",
         model=model,
+        model_settings=_default_model_settings(),
         instructions=(
             "You are a duplication detector for ML experiments on the "
             "Wunderfund Predictorium challenge (LOB data, weighted Pearson scoring).\n\n"
@@ -101,6 +139,7 @@ def build_doc_lookup(model: OpenAIChatCompletionsModel,
     return Agent[SwarmContext](
         name="DocLookup",
         model=model,
+        model_settings=_default_model_settings(),
         instructions=(
             "You look up library documentation using the Context7 tools.\n\n"
             "Steps:\n"
@@ -126,6 +165,7 @@ def build_orchestrator(model: OpenAIChatCompletionsModel) -> Agent[SwarmContext]
     return Agent[SwarmContext](
         name="Orchestrator",
         model=model,
+        model_settings=_default_model_settings(),
         instructions=(
             "You coordinate an ML experiment swarm targeting a weighted Pearson "
             "correlation score on the Wunderfund Predictorium challenge.\n\n"
@@ -154,6 +194,7 @@ def build_planner(model: OpenAIChatCompletionsModel) -> Agent[SwarmContext]:
     return Agent[SwarmContext](
         name="Planner",
         model=model,
+        model_settings=_default_model_settings(),
         instructions=(
             "You plan the next experiment for a given branch on the Wunderfund "
             "Predictorium challenge.\n\n"
@@ -195,6 +236,7 @@ def build_coder(model: OpenAIChatCompletionsModel,
     return Agent[SwarmContext](
         name="Coder",
         model=model,
+        model_settings=_default_model_settings(),
         instructions=(
             "You generate complete, runnable PyTorch training scripts for the "
             "Wunderfund Predictorium challenge.\n\n"
@@ -243,6 +285,7 @@ def build_evaluator(model: OpenAIChatCompletionsModel) -> Agent[SwarmContext]:
     return Agent[SwarmContext](
         name="Evaluator",
         model=model,
+        model_settings=_default_model_settings(),
         instructions=(
             "You execute experiments and interpret results.\n\n"
             "For each experiment:\n"
@@ -265,6 +308,7 @@ def build_strategist(model: OpenAIChatCompletionsModel) -> Agent[SwarmContext]:
     return Agent[SwarmContext](
         name="Strategist",
         model=model,
+        model_settings=_default_model_settings(),
         instructions=(
             "You review the full experiment history across ALL branches every few "
             "iterations and propose high-level strategic shifts.\n\n"
@@ -293,8 +337,8 @@ def build_strategist(model: OpenAIChatCompletionsModel) -> Agent[SwarmContext]:
 class AgentSuite:
     """Holds all agent instances. Created once in main.py."""
 
-    def __init__(self, vllm_url: str = "http://localhost:8000/v1",
-                 model_name: str = "GPT-OSS-120B"):
+    def __init__(self, vllm_url: str | None = None,
+                 model_name: str = "gpt-5.2"):
         self.model = build_model(vllm_url, model_name)
         self.context7 = build_context7()
 
