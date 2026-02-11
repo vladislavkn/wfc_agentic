@@ -99,6 +99,18 @@ def parse_agent_json(text: str) -> dict:
     return {}
 
 
+def _unique_branch_name(db: SwarmDB, base_name: str) -> str:
+    """Return a branch name that does not already exist in the DB."""
+    candidate = (base_name or "branch").strip()
+    if not db.get_branch(candidate):
+        return candidate
+
+    suffix = 2
+    while db.get_branch(f"{candidate}-{suffix}"):
+        suffix += 1
+    return f"{candidate}-{suffix}"
+
+
 # ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
@@ -246,8 +258,9 @@ async def _main_loop(
         # Process orchestrator decision
         action = orch_decision.get("action", "")
         if action == "create_branch":
-            name = orch_decision.get("name", f"branch-{i}")
+            requested_name = orch_decision.get("name", f"branch-{i}")
             hypothesis = orch_decision.get("hypothesis", "New approach")
+            name = _unique_branch_name(ctx.db, requested_name)
             ctx.db.create_branch(name, hypothesis)
             ctx.current_branch = name
             logger.branch_created(name, hypothesis)
@@ -264,9 +277,9 @@ async def _main_loop(
             if active_branches:
                 ctx.current_branch = active_branches[0].name
             else:
-                ctx.db.create_branch(
-                    f"auto-{i}", "Auto-created initial branch")
-                ctx.current_branch = f"auto-{i}"
+                auto_name = _unique_branch_name(ctx.db, f"auto-{i}")
+                ctx.db.create_branch(auto_name, "Auto-created initial branch")
+                ctx.current_branch = auto_name
                 logger.branch_created(ctx.current_branch, "Auto-created")
 
         logger.decision("Orchestrator", json.dumps(
