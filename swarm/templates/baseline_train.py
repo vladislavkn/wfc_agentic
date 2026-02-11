@@ -14,16 +14,13 @@ Output (last line of stdout): JSON with metrics.
 
 import argparse
 import json
-import os
 import sys
-import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from scipy.stats import pearsonr
 from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Dataset
 

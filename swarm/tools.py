@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import shutil
 import subprocess
 import time
@@ -25,8 +24,8 @@ from typing import TYPE_CHECKING
 from agents import Agent, Runner, RunContextWrapper, function_tool
 
 from swarm.state import (
-    Branch, BranchStatus, Experiment, ExperimentStatus,
-    IterationMetrics, SwarmContext,
+    BranchStatus, Experiment, ExperimentStatus,
+    SwarmContext,
 )
 from swarm.validator import validate_solution
 
@@ -190,7 +189,11 @@ async def check_duplicate_via_subagent(
     history_lines = []
     for e in experiments:
         status = e.status.value
-        score = f"score={e.mean_score:.4f}" if e.mean_score else "no score"
+        score = (
+            f"score={e.mean_score:.4f}"
+            if e.mean_score is not None
+            else "no score"
+        )
         err = f" error={e.error_log[:80]}" if e.error_log else ""
         history_lines.append(
             f"- {e.experiment_id} [{status}] {score}{err}\n"
@@ -422,7 +425,9 @@ async def prepare_submission(ctx: RunContextWrapper[SwarmContext],
 
     # Run in submission mode (trains on full data with 5% holdout)
     # Call the training execution directly (not via tool decorator)
-    result_str = await _execute_training(ctx, experiment_id, mode="submission")
+    result_str = await _execute_training(
+        ctx.context, experiment_id, mode="submission"
+    )
     result = json.loads(result_str)
 
     if "error" in result:
@@ -519,7 +524,7 @@ def git_commit_experiment(ctx: RunContextWrapper[SwarmContext],
     # Stage and commit
     _git_run(f"git add {exp_dir}/")
     _git_run("git add experiments/")
-    _git_run(f"git add swarm.db 2>/dev/null || true")
+    _git_run("git add swarm.db 2>/dev/null || true")
 
     code, out = _git_run(
         f'git commit -m "[{exp.branch_name}/{experiment_id}] {message}"'

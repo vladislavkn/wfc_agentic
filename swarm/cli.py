@@ -99,7 +99,7 @@ def _update_submission(args):
         if drop > 10:
             print(f"\n  ⚠️  Score dropped {drop:.1f}% from CV. "
                   f"Consider more regularization or larger CV subset.")
-        print(f"\n  Run 'python -m swarm.cli run' to continue the swarm.")
+        print("\n  Run 'python -m swarm.cli run' to continue the swarm.")
 
 
 def _show_status(args):
@@ -108,7 +108,7 @@ def _show_status(args):
     tokens = db.total_tokens()
 
     print(f"\n{'='*60}")
-    print(f"  SWARM STATUS")
+    print("  SWARM STATUS")
     print(f"{'='*60}")
     print(f"  Total tokens: {tokens['total']:,}")
     print(f"  Branches: {len(branches)}")
@@ -139,7 +139,7 @@ def _show_status(args):
     # Latest advice
     advice = db.latest_advice()
     if advice:
-        print(f"  Latest strategist advice:")
+        print("  Latest strategist advice:")
         for line in advice.split("\n")[:5]:
             print(f"    {line}")
         print()
