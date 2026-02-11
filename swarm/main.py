@@ -328,7 +328,7 @@ async def _main_loop(
         if dedup_result["is_duplicate"]:
             logger.decision(
                 "System",
-                f"Planner's proposal is a duplicate. Skipping and re-planning next iteration."
+                "Planner's proposal is a duplicate. Skipping and re-planning next iteration."
             )
             continue
 
@@ -566,7 +566,11 @@ def _format_experiments_for_planner(experiments: list) -> str:
         recent = experiments
 
     for e in recent:
-        score = f"score={e.mean_score:.4f}" if e.mean_score else "no score"
+        score = (
+            f"score={e.mean_score:.4f}"
+            if e.mean_score is not None
+            else "no score"
+        )
         std = f" std={e.fold_std:.4f}" if e.fold_std else ""
         err = f" ERROR: {e.error_log[:80]}" if e.error_log else ""
         lines.append(

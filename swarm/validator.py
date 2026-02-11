@@ -7,11 +7,9 @@ Fixes #10 — catches wrong shapes, missing state reset, hardcoded paths, etc.
 from __future__ import annotations
 
 import importlib.util
-import sys
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -105,7 +103,7 @@ def validate_solution(solution_path: str, model_dir: str) -> ValidationResult:
             )
             try:
                 result = model.predict(dp)
-            except Exception as e:
+            except Exception:
                 errors.append(
                     f"predict() crashed at seq={seq_ix} step={step}: "
                     f"{traceback.format_exc()[-200:]}"

@@ -23,8 +23,6 @@ from swarm.tools import (
     get_branch_status,
     get_full_history,
     git_commit_experiment,
-    git_commit_submission,
-    prepare_submission,
     register_experiment,
     run_training,
     switch_branch,
